@@ -32,7 +32,7 @@ class MultiPoseLoss(torch.nn.Module):
   def __init__(self, opt):
     super(MultiPoseLoss, self).__init__()
     self.crit = FocalLoss()
-    self.crit_hm_hp = torch.nn.MSELoss() if opt.mse_loss else FocalLoss()
+    self.crit_hm_hp = FocalLoss()
     self.crit_kp = RegWeightedL1Loss()
     self.crit_reg = RegL1Loss() if opt.reg_loss == 'l1' else \
                     RegLoss() if opt.reg_loss == 'sl1' else None
@@ -46,8 +46,7 @@ class MultiPoseLoss(torch.nn.Module):
     # what is num_stacks
     output = outputs[0]
     output['hm'] = _sigmoid(output['hm'])
-    if opt.hm_hp and not opt.mse_loss:
-        output['hm_hp'] = _sigmoid(output['hm_hp'])
+    output['hm_hp'] = _sigmoid(output['hm_hp'])
 
     hm_loss += self.crit(output['hm'], batch['hm'])
     hp_loss += self.crit_kp(output['hps'], batch['hps_mask'], 
@@ -134,7 +133,7 @@ class MultiPoseTrainer():
       for l in avg_loss_stats:
         avg_loss_stats[l].update(
           loss_stats[l].mean().item(), batch['input'].size(0))
-        writer.add_scalar(l, avg_loss_stats[l].avg, iter_id)
+        # writer.add_scalar(l, avg_loss_stats[l].avg, iter_id)
         Bar.suffix = Bar.suffix + '|{} {:.4f} '.format(l, avg_loss_stats[l].avg)
       #if not opt.hide_data_time:
       #  Bar.suffix = Bar.suffix + '|Data {dt.val:.3f}s({dt.avg:.3f}s) ' \
@@ -155,6 +154,9 @@ class MultiPoseTrainer():
     bar.finish()
     ret = {k: v.avg for k, v in avg_loss_stats.items()}
     ret['time'] = bar.elapsed_td.total_seconds() / 60.
+    
+    for l in avg_loss_stats:
+        writer.add_scalar(l, avg_loss_stats[l].avg, epoch)
     return ret, results
 
   def _get_losses(self, opt):

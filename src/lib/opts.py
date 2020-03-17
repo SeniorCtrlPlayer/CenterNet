@@ -10,8 +10,7 @@ class opts(object):
   def __init__(self):
     self.parser = argparse.ArgumentParser()
     # basic experiment setting
-    self.parser.add_argument('--dataset', default='coco',
-                             help='coco | kitti | coco_hp | pascal')
+    self.parser.add_argument('--dataset', default='coco_hp')
     self.parser.add_argument('--exp_id', default='default')
     self.parser.add_argument('--test', action='store_true')
     self.parser.add_argument('--debug', type=int, default=0,
@@ -56,7 +55,7 @@ class opts(object):
     # model
     self.parser.add_argument('--arch', default='dla_34', 
                              help='model architecture. Currently tested'
-                                  'res_18 | resdcn_18 | dla_34')
+                                  'resdcn_18 | dla_34')
     self.parser.add_argument('--head_conv', type=int, default=-1,
                              help='conv layer channels for output head'
                                   '0 for no conv layer'
@@ -67,10 +66,10 @@ class opts(object):
     self.parser.add_argument('--input_res', type=int, default=-1, 
                              help='input height and width. -1 for default from '
                              'dataset. Will be overriden by input_h | input_w')
-    self.parser.add_argument('--input_h', type=int, default=-1, 
-                             help='input height. -1 for default from dataset.')
-    self.parser.add_argument('--input_w', type=int, default=-1, 
-                             help='input width. -1 for default from dataset.')
+    # self.parser.add_argument('--input_h', type=int, default=-1, 
+    #                          help='input height. -1 for default from dataset.')
+    # self.parser.add_argument('--input_w', type=int, default=-1, 
+    #                          help='input width. -1 for default from dataset.')
     
     # train
     self.parser.add_argument('--lr', type=float, default=1.25e-4, 
@@ -142,6 +141,9 @@ class opts(object):
     # exdet
     self.parser.add_argument('--center_thresh', type=float, default=0.1,
                              help='threshold for centermap.')
+    
+    self.parser.add_argument('--colab', action='store_true',
+                             help='use colab env')
 
   def parse(self, args=''):
     if args == '':
@@ -187,7 +189,10 @@ class opts(object):
     print('training chunk_sizes:', opt.chunk_sizes)
 
     opt.root_dir = os.path.join(os.path.dirname(__file__), '..', '..')
-    opt.data_dir = os.path.join(opt.root_dir, 'data')
+    if not opt.colab:
+        opt.data_dir = os.path.join(opt.root_dir, 'data')
+    else:
+        opt.data_dir = os.path.join(opt.root_dir, '../drive/My Drive')
     opt.exp_dir = os.path.join(opt.root_dir, 'exp', 'multi_pose')
     opt.save_dir = os.path.join(opt.exp_dir, opt.exp_id)
     opt.debug_dir = os.path.join(opt.save_dir, 'debug')
@@ -207,8 +212,8 @@ class opts(object):
     # input_h(w): opt.input_h overrides opt.input_res overrides dataset default
     input_h = opt.input_res if opt.input_res > 0 else input_h
     input_w = opt.input_res if opt.input_res > 0 else input_w
-    opt.input_h = opt.input_h if opt.input_h > 0 else input_h
-    opt.input_w = opt.input_w if opt.input_w > 0 else input_w
+    opt.input_h = input_h
+    opt.input_w = input_w
     opt.output_h = opt.input_h // opt.down_ratio
     opt.output_w = opt.input_w // opt.down_ratio
     opt.input_res = max(opt.input_h, opt.input_w)
@@ -219,8 +224,7 @@ class opts(object):
     opt.heads = {'hm': opt.num_classes, 'wh': 2, 'hps': 34}
     # if opt.reg_offset:
     #   opt.heads.update({'reg': 2})
-    if opt.hm_hp:
-      opt.heads.update({'hm_hp': 17})
+    opt.heads.update({'hm_hp': 17})
     # if opt.reg_hp_offset:
     #   opt.heads.update({'hp_offset': 2})
     print('heads', opt.heads)

@@ -97,7 +97,7 @@ class MultiPoseDataset(data.Dataset):
       h, w = bbox[3] - bbox[1], bbox[2] - bbox[0]
       if (h > 0 and w > 0):
         radius = gaussian_radius((math.ceil(h), math.ceil(w)))
-        radius = self.opt.hm_gauss if self.opt.mse_loss else max(0, int(radius)) 
+        radius = max(0, int(radius)) 
         ct = np.array(
           [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2], dtype=np.float32)
         ct_int = ct.astype(np.int32)
@@ -130,10 +130,10 @@ class MultiPoseDataset(data.Dataset):
         draw_gaussian(hm[cls_id], ct_int, radius)
     ret = {'input': inp, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh,
            'hps': kps, 'hps_mask': kps_mask}
-    if self.opt.reg_offset:
-      ret.update({'reg': reg})
+    # if self.opt.reg_offset:
+    #   ret.update({'reg': reg})
     if self.opt.hm_hp:
       ret.update({'hm_hp': hm_hp})
-    if self.opt.reg_hp_offset:
-      ret.update({'hp_offset': hp_offset, 'hp_ind': hp_ind, 'hp_mask': hp_mask})
+    # if self.opt.reg_hp_offset:
+      # ret.update({'hp_offset': hp_offset, 'hp_ind': hp_ind, 'hp_mask': hp_mask})
     return ret
