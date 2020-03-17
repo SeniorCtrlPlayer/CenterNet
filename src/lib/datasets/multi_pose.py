@@ -103,6 +103,7 @@ class MultiPoseDataset(data.Dataset):
         ct_int = ct.astype(np.int32)
         wh[k] = 1. * w, 1. * h
         ind[k] = ct_int[1] * output_res + ct_int[0]
+        # 中心坐标的小数偏移量
         reg[k] = ct - ct_int
         reg_mask[k] = 1
         num_kpts = pts[:, 2].sum()
@@ -111,11 +112,11 @@ class MultiPoseDataset(data.Dataset):
           reg_mask[k] = 0
 
         hp_radius = gaussian_radius((math.ceil(h), math.ceil(w)))
-        hp_radius = self.opt.hm_gauss \
-                    if self.opt.mse_loss else max(0, int(hp_radius)) 
+        hp_radius = max(0, int(hp_radius)) 
         for j in range(num_joints):
           if pts[j, 2] > 0:
-            # pts[j, :2] = affine_transform(pts[j, :2], trans_output_rot)
+              # origin is trans_output_rot
+            pts[j, :2] = affine_transform(pts[j, :2], trans_output)
             if pts[j, 0] >= 0 and pts[j, 0] < output_res and \
                pts[j, 1] >= 0 and pts[j, 1] < output_res:
               kps[k, j * 2: j * 2 + 2] = pts[j, :2] - ct_int

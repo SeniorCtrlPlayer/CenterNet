@@ -13,7 +13,7 @@ import torch.utils.data as data
 class COCOHP(data.Dataset):
   num_classes = 1
   num_joints = 17
-  default_resolution = [256, 256]
+  default_resolution = [512, 512]
   mean = np.array([0.40789654, 0.44719302, 0.47026115],
                    dtype=np.float32).reshape(1, 1, 3)
   std  = np.array([0.28863828, 0.27408164, 0.27809835],

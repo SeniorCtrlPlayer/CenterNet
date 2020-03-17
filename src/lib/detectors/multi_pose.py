@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 import time
 import torch
-from torch.utils.tensorboard import SummaryWriter
+# from torch.utils.tensorboard import SummaryWriter
 
 from models.model import create_model, load_model
 from models.decode import multi_pose_decode

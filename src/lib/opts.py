@@ -158,10 +158,11 @@ class opts(object):
 
     opt.fix_res = not opt.keep_res
     print('Fix size testing.' if opt.fix_res else 'Keep resolution testing.')
-    opt.reg_offset = True
+    opt.reg_offset = False
     opt.reg_bbox = True
     opt.hm_hp = True
-    opt.reg_hp_offset = True
+    # opt.reg_hp_offset = True
+    opt.reg_hp_offset = False
 
     if opt.head_conv == -1: # init default head_conv
       opt.head_conv = 256 if 'dla' in opt.arch else 64
@@ -228,7 +229,7 @@ class opts(object):
   def init(self, args=''):
     default_dataset_info = {
       'multi_pose': {
-        'default_resolution': [256, 256], 'num_classes': 1, 
+        'default_resolution': [512, 512], 'num_classes': 1, 
         'mean': [0.408, 0.447, 0.470], 'std': [0.289, 0.274, 0.278],
         'dataset': 'coco_hp', 'num_joints': 17,
         'flip_idx': [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10], 
