@@ -44,7 +44,7 @@ class MultiPoseDataset(data.Dataset):
       cf = self.opt.shift
       c[0] += s * np.clip(np.random.randn()*cf, -2*cf, 2*cf)
       c[1] += s * np.clip(np.random.randn()*cf, -2*cf, 2*cf)
-      s = s * np.clip(np.random.randn()*sf + 1, 1 - sf, 1 + sf)
+      # s = s * np.clip(np.random.randn()*sf + 1, 1 - sf, 1 + sf)
 
       if np.random.random() < self.opt.flip:
         flipped = True

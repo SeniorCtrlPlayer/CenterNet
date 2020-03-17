@@ -76,9 +76,10 @@ def test2(name):
     img_origin = cv2.imread(name)
     h, w = img_origin.shape[:2]
     c = np.array([w/2., h/2.])
-    s = max(img_origin.shape[:2])
+    s = max(img_origin.shape[:2])*0.5
     trans = get_affine_transform(c, s, 0, [512, 512])
     inp = cv2.warpAffine(img_origin, trans, (512,512), flags=cv2.INTER_LINEAR)
+    print(inp.shape)
     cv2.imshow('input', inp)
     cv2.waitKey(27)
     print(c)
