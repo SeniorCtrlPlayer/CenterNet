@@ -68,8 +68,10 @@ def get_affine_transform2(center, s, output_size, inv=0):
     dst = np.zeros((3, 2), dtype=np.float32)
     
     src[0, :] = center
-    src[1, :] = center - [0, s]
-    src[2, :] = [0, 0]
+    # if center[0] > center[1]:
+    #     src[1, :] = center - []
+    src[1, :] = center - [0, max(center)]
+    src[2, :] = center - [max(center), max(center)]
     dst[0, :] = np.array([output_size * 0.5, output_size*0.5], dtype=np.float32)
     dst[1, :] = np.array([output_size * 0.5, 0], dtype=np.float32)
     dst[2, :] = [0, 0]

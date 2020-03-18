@@ -1,7 +1,19 @@
 # -*- coding: utf-8 -*-
-
+import _init_paths
 import cv2
 import numpy as np
+import sys
+# sys.path.append('../src')
+from lib.datasets.multi_pose import MultiPoseDataset
+from lib.datasets.coco_hp import COCOHP
+from opts import opts
+from torch.utils.data import DataLoader
+
+def get_dataset():
+  class Dataset(COCOHP, MultiPoseDataset):
+    pass
+  return Dataset
+
 rows=0
 cols=0
 
@@ -60,31 +72,53 @@ def get_affine_transform(center,
     return trans
 
 def test(name):
-  img_origin = cv2.imread(name)
-  cv2.imshow('input', img_origin)
-  #cv.waitKey(0)
-  rows, cols = img_origin.shape[:2]
-  pts1 = np.float32([[50,50],[200,50],[50,200]])
-  pts2 = np.float32([[50,100],[200,100],[50,250]])
-  M = cv2.getAffineTransform(pts1,pts2)
-  print(M)
-  #第三个参数：变换后的图像大小
-  res = cv2.warpAffine(img_origin,M,(rows//2,cols//2))
-  cv2.imshow('output', res)
-  cv2.waitKey(0)
+    img_origin = cv2.imread(name)
+    cv2.imshow('input', img_origin)
+    #cv.waitKey(0)
+    rows, cols = img_origin.shape[:2]
+    pts1 = np.float32([[50,50],[200,50],[50,200]])
+    pts2 = np.float32([[50,100],[200,100],[50,250]])
+    M = cv2.getAffineTransform(pts1,pts2)
+    print(M)
+    #第三个参数：变换后的图像大小
+    res = cv2.warpAffine(img_origin,M,(rows//2,cols//2))
+    cv2.imshow('output', res)
+    if cv2.waitKey(1) == 27:
+        return  # esc to quit
 def test2(name):
     img_origin = cv2.imread(name)
     h, w = img_origin.shape[:2]
     c = np.array([w/2., h/2.])
-    s = max(img_origin.shape[:2])*0.5
+    s = max(img_origin.shape[:2]) * 0.5
     trans = get_affine_transform(c, s, 0, [512, 512])
     inp = cv2.warpAffine(img_origin, trans, (512,512), flags=cv2.INTER_LINEAR)
-    print(inp.shape)
+    # print(inp.shape)
     cv2.imshow('input', inp)
     cv2.waitKey(27)
-    print(c)
-test2('16004479832_a748d55f21_k.jpg')
-src = np.zeros((3, 2), dtype=np.float32)
-center = np.array([rows // 2, cols // 2], dtype=np.float32)
-src[0, :] = center
-print(src)
+    # print(c)
+def test3():
+    Dataset = get_dataset()
+    opt = opts().parse()
+    opt = opts().update_dataset_info_and_set_heads(opt, Dataset)
+    Dataset = Dataset(opt, 'val')
+    test_dataloader = DataLoader(Dataset,
+                                 1,
+                                 num_workers=1,
+                                 shuffle=False)
+    inp = 1
+    heatmap = 1
+    for idx, a in enumerate(test_dataloader):
+        if a['reg_mask'][0].sum() > 4:
+            inp = a['input'][0].permute(1,2,0).numpy()
+            heatmap = a['hm'][0].permute(1,2,0).numpy()
+            break
+    # print(inp.size())
+    cv2.imshow('input',inp)
+    cv2.imshow('hm', heatmap)
+    cv2.waitKey(27)
+# test2('16004479832_a748d55f21_k.jpg')
+# src = np.zeros((3, 2), dtype=np.float32)
+# center = np.array([rows // 2, cols // 2], dtype=np.float32)
+# src[0, :] = center
+# print(src)
+test3()
