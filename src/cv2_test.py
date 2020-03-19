@@ -108,17 +108,44 @@ def test3():
     inp = 1
     heatmap = 1
     for idx, a in enumerate(test_dataloader):
-        if a['reg_mask'][0].sum() > 4:
+        if a['reg_mask'][0].sum() > 6:
             inp = a['input'][0].permute(1,2,0).numpy()
             heatmap = a['hm'][0].permute(1,2,0).numpy()
+            hm_hp = a['hm_hp'][0][0].unsqueeze(dim=-1).numpy()
             break
     # print(inp.size())
+    # print(hm_hp.size())
     cv2.imshow('input',inp)
     cv2.imshow('hm', heatmap)
+    cv2.imshow('hm_hp', hm_hp)
+    cv2.waitKey(27)
+def gaussian2D(shape, sigma=1):
+    # 得到高斯方格
+    m, n = [(ss - 1.) / 2. for ss in shape]
+    y, x = np.ogrid[-m:m+1,-n:n+1]
+
+    h = np.exp(-(x * x + y * y) / (2 * sigma * sigma))
+    h[h < np.finfo(h.dtype).eps * h.max()] = 0
+    return h
+def test4():
+    r=20
+    a = gaussian2D((r,r), r/6.)
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+    x=np.arange(0,r,1).reshape((1,r)).repeat(r, axis=0).reshape(r,r)
+    y=np.arange(0,r,1).repeat(r, axis=0).reshape(r,r)
+    fig=plt.figure()
+    ax=Axes3D(fig)
+    ax=plt.gca(projection='3d')
+    ax.plot_surface(x,y,a,cmap='rainbow')
+    plt.title('r=20 gaussian2D')
+    plt.show()
+    cv2.imshow('gaussian2D', a.reshape(r,r,1))
     cv2.waitKey(27)
 # test2('16004479832_a748d55f21_k.jpg')
 # src = np.zeros((3, 2), dtype=np.float32)
 # center = np.array([rows // 2, cols // 2], dtype=np.float32)
 # src[0, :] = center
 # print(src)
-test3()
+if __name__=='__main__':
+    test3()
