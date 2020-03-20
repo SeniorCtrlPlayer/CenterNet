@@ -15,7 +15,11 @@ from utils.debugger import Debugger
 from utils.post_process import multi_pose_post_process
 from torch.utils.tensorboard import SummaryWriter
 
-writer = SummaryWriter()
+from datetime import datetime
+import os
+current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+log_dir = os.path.join('/content/drive/My Drive/runs', current_time)
+writer = SummaryWriter(log_dir)
 
 class ModelWithLoss(torch.nn.Module):
   def __init__(self, model, loss):
