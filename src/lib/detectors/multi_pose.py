@@ -6,7 +6,6 @@ import cv2
 import numpy as np
 import time
 import torch
-# from torch.utils.tensorboard import SummaryWriter
 
 from models.model import create_model, load_model
 from models.decode import multi_pose_decode
@@ -64,6 +63,8 @@ class MultiPoseDetector():
     return images, meta
 
   def process(self, images, return_time=False):
+      
+    # from torch.utils.tensorboard import SummaryWriter
     # writer = SummaryWriter()
     # writer.add_graph(self.model, images)
     with torch.no_grad():

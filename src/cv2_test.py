@@ -109,12 +109,15 @@ def test3():
     heatmap = 1
     for idx, a in enumerate(test_dataloader):
         if a['reg_mask'][0].sum() > 6:
+            origin = a['origin'][0].numpy()
             inp = a['input'][0].permute(1,2,0).numpy()
             heatmap = a['hm'][0].permute(1,2,0).numpy()
             hm_hp = a['hm_hp'][0][0].unsqueeze(dim=-1).numpy()
             break
     # print(inp.size())
     # print(hm_hp.size())
+    # print(origin.shape)
+    cv2.imshow('origin',origin)
     cv2.imshow('input',inp)
     cv2.imshow('hm', heatmap)
     cv2.imshow('hm_hp', hm_hp)

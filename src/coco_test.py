@@ -31,8 +31,40 @@ class MultiPose(MultiPoseDataset):
         anns = self.coco.loadAnns(ids=ann_ids)
         num_objs = min(len(anns), self.max_objs)
 
-data_test = MultiPose('/home/lwk/Documents/CenterNet/data')
-# def get_dataset():
-#   class Dataset(COCOHP, MultiPoseDataset):
-#     pass
-#   return Dataset
+def verify(data_dir, split):
+    split = 'train'
+    data_dir = os.path.join(data_dir, 'coco')
+    img_dir = os.path.join(data_dir, '{}2017'.format(split))
+    if split == 'test':
+      annot_path = os.path.join(
+          data_dir, 'annotations', 
+          'image_info_test-dev2017.json').format(split)
+    else:
+      annot_path = os.path.join(
+        data_dir, 'annotations', 
+        'person_keypoints_{}2017.json').format(split)
+    coco_test = coco.COCO(annot_path)
+    image_ids = coco_test.getImgIds()
+    flag = False
+    no_exists_filename = []
+    small_filename = []
+    for img_id in image_ids:
+        file_name = coco_test.loadImgs(ids=[img_id])[0]['file_name']
+        img_path = os.path.join(img_dir, file_name)
+        try:
+            img_size = os.path.getsize(img_path)/float(1024)
+            if img_size < 5:
+                small_filename.append(img_path)
+        except OSError:
+            flag = True
+            no_exists_filename.append(img_path)
+            break
+    if flag:
+        print(no_exists_filename)
+        print(small_filename)
+    else:
+        print(small_filename)
+        print(split+' is complete')
+
+# data_test = MultiPose('/home/lwk/Documents/CenterNet/data')
+verify('/home/lwk/Documents/CenterNet/data', 'train')

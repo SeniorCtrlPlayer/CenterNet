@@ -37,11 +37,12 @@ class BasicBlock(nn.Module):
                                stride=stride, padding=dilation,
                                bias=False, dilation=dilation)
         self.bn1 = nn.BatchNorm2d(planes, momentum=BN_MOMENTUM)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu1 = nn.ReLU(inplace=True)
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3,
                                 stride=1, padding=dilation,
                                 bias=False, dilation=dilation)
         self.bn2 = nn.BatchNorm2d(planes, momentum=BN_MOMENTUM)
+        self.relu2 = nn.ReLU(inplace=True)
         # self.stride = stride
 
     def forward(self, x, residual=None):
@@ -50,100 +51,100 @@ class BasicBlock(nn.Module):
 
         out = self.conv1(x)
         out = self.bn1(out)
-        out = self.relu(out)
+        out = self.relu1(out)
 
         out = self.conv2(out)
         out = self.bn2(out)
 
         out += residual
-        out = self.relu(out)
+        out = self.relu2(out)
 
         return out
 
 
-class Bottleneck(nn.Module):
-    expansion = 2
+# class Bottleneck(nn.Module):
+#     expansion = 2
 
-    def __init__(self, inplanes, planes, stride=1, dilation=1):
-        super(Bottleneck, self).__init__()
-        expansion = Bottleneck.expansion
-        bottle_planes = planes // expansion
-        self.conv1 = nn.Conv2d(inplanes, bottle_planes,
-                               kernel_size=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(bottle_planes, momentum=BN_MOMENTUM)
-        self.conv2 = nn.Conv2d(bottle_planes, bottle_planes, kernel_size=3,
-                               stride=stride, padding=dilation,
-                               bias=False, dilation=dilation)
-        self.bn2 = nn.BatchNorm2d(bottle_planes, momentum=BN_MOMENTUM)
-        self.conv3 = nn.Conv2d(bottle_planes, planes,
-                               kernel_size=1, bias=False)
-        self.bn3 = nn.BatchNorm2d(planes, momentum=BN_MOMENTUM)
-        self.relu = nn.ReLU(inplace=True)
-        self.stride = stride
+#     def __init__(self, inplanes, planes, stride=1, dilation=1):
+#         super(Bottleneck, self).__init__()
+#         expansion = Bottleneck.expansion
+#         bottle_planes = planes // expansion
+#         self.conv1 = nn.Conv2d(inplanes, bottle_planes,
+#                                kernel_size=1, bias=False)
+#         self.bn1 = nn.BatchNorm2d(bottle_planes, momentum=BN_MOMENTUM)
+#         self.conv2 = nn.Conv2d(bottle_planes, bottle_planes, kernel_size=3,
+#                                stride=stride, padding=dilation,
+#                                bias=False, dilation=dilation)
+#         self.bn2 = nn.BatchNorm2d(bottle_planes, momentum=BN_MOMENTUM)
+#         self.conv3 = nn.Conv2d(bottle_planes, planes,
+#                                kernel_size=1, bias=False)
+#         self.bn3 = nn.BatchNorm2d(planes, momentum=BN_MOMENTUM)
+#         self.relu = nn.ReLU(inplace=True)
+#         self.stride = stride
 
-    def forward(self, x, residual=None):
-        if residual is None:
-            residual = x
+#     def forward(self, x, residual=None):
+#         if residual is None:
+#             residual = x
 
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
+#         out = self.conv1(x)
+#         out = self.bn1(out)
+#         out = self.relu(out)
 
-        out = self.conv2(out)
-        out = self.bn2(out)
-        out = self.relu(out)
+#         out = self.conv2(out)
+#         out = self.bn2(out)
+#         out = self.relu(out)
 
-        out = self.conv3(out)
-        out = self.bn3(out)
+#         out = self.conv3(out)
+#         out = self.bn3(out)
 
-        out += residual
-        out = self.relu(out)
+#         out += residual
+#         out = self.relu(out)
 
-        return out
+#         return out
 
 
-class BottleneckX(nn.Module):
-    expansion = 2
-    cardinality = 32
+# class BottleneckX(nn.Module):
+#     expansion = 2
+#     cardinality = 32
 
-    def __init__(self, inplanes, planes, stride=1, dilation=1):
-        super(BottleneckX, self).__init__()
-        cardinality = BottleneckX.cardinality
-        # dim = int(math.floor(planes * (BottleneckV5.expansion / 64.0)))
-        # bottle_planes = dim * cardinality
-        bottle_planes = planes * cardinality // 32
-        self.conv1 = nn.Conv2d(inplanes, bottle_planes,
-                               kernel_size=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(bottle_planes, momentum=BN_MOMENTUM)
-        self.conv2 = nn.Conv2d(bottle_planes, bottle_planes, kernel_size=3,
-                               stride=stride, padding=dilation, bias=False,
-                               dilation=dilation, groups=cardinality)
-        self.bn2 = nn.BatchNorm2d(bottle_planes, momentum=BN_MOMENTUM)
-        self.conv3 = nn.Conv2d(bottle_planes, planes,
-                               kernel_size=1, bias=False)
-        self.bn3 = nn.BatchNorm2d(planes, momentum=BN_MOMENTUM)
-        self.relu = nn.ReLU(inplace=True)
-        self.stride = stride
+#     def __init__(self, inplanes, planes, stride=1, dilation=1):
+#         super(BottleneckX, self).__init__()
+#         cardinality = BottleneckX.cardinality
+#         # dim = int(math.floor(planes * (BottleneckV5.expansion / 64.0)))
+#         # bottle_planes = dim * cardinality
+#         bottle_planes = planes * cardinality // 32
+#         self.conv1 = nn.Conv2d(inplanes, bottle_planes,
+#                                kernel_size=1, bias=False)
+#         self.bn1 = nn.BatchNorm2d(bottle_planes, momentum=BN_MOMENTUM)
+#         self.conv2 = nn.Conv2d(bottle_planes, bottle_planes, kernel_size=3,
+#                                stride=stride, padding=dilation, bias=False,
+#                                dilation=dilation, groups=cardinality)
+#         self.bn2 = nn.BatchNorm2d(bottle_planes, momentum=BN_MOMENTUM)
+#         self.conv3 = nn.Conv2d(bottle_planes, planes,
+#                                kernel_size=1, bias=False)
+#         self.bn3 = nn.BatchNorm2d(planes, momentum=BN_MOMENTUM)
+#         self.relu = nn.ReLU(inplace=True)
+#         self.stride = stride
 
-    def forward(self, x, residual=None):
-        if residual is None:
-            residual = x
+#     def forward(self, x, residual=None):
+#         if residual is None:
+#             residual = x
 
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
+#         out = self.conv1(x)
+#         out = self.bn1(out)
+#         out = self.relu(out)
 
-        out = self.conv2(out)
-        out = self.bn2(out)
-        out = self.relu(out)
+#         out = self.conv2(out)
+#         out = self.bn2(out)
+#         out = self.relu(out)
 
-        out = self.conv3(out)
-        out = self.bn3(out)
+#         out = self.conv3(out)
+#         out = self.bn3(out)
 
-        out += residual
-        out = self.relu(out)
+#         out += residual
+#         out = self.relu(out)
 
-        return out
+#         return out
 
 
 class Root(nn.Module):
@@ -212,7 +213,11 @@ class Tree(nn.Module):
         bottom = self.downsample(x) if self.downsample else x
         residual = self.project(bottom) if self.project else bottom
         if self.level_root:
+            # Is False Origin?
             children.append(bottom)
+            # children.append(residual)
+        # else:
+            # residual = self.project(bottom) if self.project else bottom
         x1 = self.tree1(x, residual)
         if self.levels == 1:
             x2 = self.tree2(x1)
@@ -240,8 +245,7 @@ class DLA(nn.Module):
         self.level1 = self._make_conv_level(
             channels[0], channels[1], levels[1], stride=2)
         self.level2 = Tree(levels[2], block, channels[1], channels[2], 2,
-                           level_root=False,
-                           root_residual=residual_root)
+                           level_root=False, root_residual=residual_root)
         self.level3 = Tree(levels[3], block, channels[2], channels[3], 2,
                            level_root=True, root_residual=residual_root)
         self.level4 = Tree(levels[4], block, channels[3], channels[4], 2,
@@ -487,21 +491,25 @@ class DLASeg(nn.Module):
                 fill_fc_weights(fc)
             self.__setattr__(head, fc)
 
-    def forward(self, x):
+    def forward(self, x, debug_net=False):
         x = self.base(x)
         self.test = x
         x = self.dla_up(x)
 
-        y = []
-        for i in range(self.last_level - self.first_level):
-            y.append(x[i].clone())
-        self.ida_up(y, 0, len(y))
-
+        # y = []
+        # for i in range(self.last_level - self.first_level):
+        #     y.append(x[i].clone())
+        # self.ida_up(y, 0, len(y))
+  
         z = {}
-        # vis_z = []
+        vis_z = []
         for head in self.heads:
-            z[head] = self.__getattr__(head)(y[-1])
-            # vis_z.append(z[head])
+            # z[head] = self.__getattr__(head)(y[-1])
+            z[head] = self.__getattr__(head)(x[0])
+            if debug_net:
+                vis_z.append(z[head])
+        if debug_net:
+            return tuple(vis_z)
         # origin
         return [z]
         # alter by lwk
