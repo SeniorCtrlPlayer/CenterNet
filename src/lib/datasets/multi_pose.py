@@ -132,7 +132,7 @@ class MultiPoseDataset(data.Dataset):
            'hps': kps, 'hps_mask': kps_mask}
     # if self.opt.reg_offset:
     #   ret.update({'reg': reg})
-    ret.update({'origin': img})
+    # ret.update({'origin': img})
     if self.opt.hm_hp:
       ret.update({'hm_hp': hm_hp})
     # if self.opt.reg_hp_offset:

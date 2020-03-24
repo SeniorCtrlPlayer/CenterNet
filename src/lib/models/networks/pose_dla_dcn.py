@@ -388,6 +388,7 @@ class IDAUp(nn.Module):
             f = int(up_f[i])  
             proj = DeformConv(c, o)
             node = DeformConv(o, o)
+            # node = conv3x3(o, o)
      
             up = nn.ConvTranspose2d(o, o, f * 2, stride=f, 
                                     padding=f // 2, output_padding=0,
@@ -463,8 +464,8 @@ class DLASeg(nn.Module):
         if out_channel == 0:
             out_channel = channels[self.first_level]
 
-        self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level], 
-                            [2 ** i for i in range(self.last_level - self.first_level)])
+        # self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level], 
+                            # [2 ** i for i in range(self.last_level - self.first_level)])
         
         self.heads = heads
         for head in self.heads:

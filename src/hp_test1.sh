@@ -1,1 +1,1 @@
-python demo.py --demo ../images --load_model ../models/multi_pose_dla_3x.pth
+python demo.py --demo ../images --load_model ../models/model_best.pth

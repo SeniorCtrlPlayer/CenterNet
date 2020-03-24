@@ -17,9 +17,6 @@ from torch.utils.tensorboard import SummaryWriter
 
 from datetime import datetime
 import os
-current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-log_dir = os.path.join('/content/drive/My Drive/runs', current_time)
-writer = SummaryWriter(log_dir)
 
 class ModelWithLoss(torch.nn.Module):
   def __init__(self, model, loss):
@@ -81,6 +78,9 @@ class MultiPoseTrainer():
     self.optimizer = optimizer
     self.loss_stats, self.loss = self._get_losses(opt)
     self.model_with_loss = ModelWithLoss(model, self.loss)
+    current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+    log_dir = os.path.join(opt.save_dir, 'runs', current_time)
+    self.writer = SummaryWriter(log_dir)
 
   def set_device(self, gpus, chunk_sizes, device):
     self.model_with_loss = self.model_with_loss.to(device)
@@ -160,7 +160,7 @@ class MultiPoseTrainer():
     ret['time'] = bar.elapsed_td.total_seconds() / 60.
     
     for l in avg_loss_stats:
-        writer.add_scalar(l, avg_loss_stats[l].avg, epoch)
+        self.writer.add_scalar(l, avg_loss_stats[l].avg, epoch)
     return ret, results
 
   def _get_losses(self, opt):
