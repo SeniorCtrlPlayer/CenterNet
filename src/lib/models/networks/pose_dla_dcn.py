@@ -14,6 +14,7 @@ import torch.nn.functional as F
 import torch.utils.model_zoo as model_zoo
 
 from .DCNv2.dcn_v2 import DCN
+from .DUP.dup import Dup
 
 # from .DCNv2.dcn_py import DeformConv2D as DCN
 
@@ -389,7 +390,6 @@ class IDAUp(nn.Module):
             proj = DeformConv(c, o)
             node = DeformConv(o, o)
             # node = conv3x3(o, o)
-     
             up = nn.ConvTranspose2d(o, o, f * 2, stride=f, 
                                     padding=f // 2, output_padding=0,
                                     groups=o, bias=False)
@@ -408,7 +408,32 @@ class IDAUp(nn.Module):
             node = getattr(self, 'node_' + str(i - startp))
             layers[i] = node(layers[i] + layers[i - 1])
 
+# add by lwk
+class IDAUp_Dup(nn.Module):
 
+    def __init__(self, o, channels, up_f):
+        super(IDAUp_Dup, self).__init__()
+        for i in range(1, len(channels)):
+            c = channels[i]
+            f = int(up_f[i])  
+            proj = conv3x3(c, o)
+            node = conv3x3(o, o)
+            # node = conv3x3(o, o)
+            
+            up = Dup(o, f, f)
+
+            setattr(self, 'proj_' + str(i), proj)
+            setattr(self, 'up_' + str(i), up)
+            setattr(self, 'node_' + str(i), node)
+                 
+        
+    def forward(self, layers, startp, endp):
+        for i in range(startp + 1, endp):
+            upsample = getattr(self, 'up_' + str(i - startp))
+            project = getattr(self, 'proj_' + str(i - startp))
+            layers[i] = upsample(project(layers[i]))
+            node = getattr(self, 'node_' + str(i - startp))
+            layers[i] = node(layers[i] + layers[i - 1])
 
 class DLAUp(nn.Module):
     def __init__(self, startp, channels, scales, in_channels=None):
@@ -434,7 +459,31 @@ class DLAUp(nn.Module):
             ida(layers, len(layers) -i - 2, len(layers))
             out.insert(0, layers[-1])
         return out
+# add by lwk
+class DLAUp_Dup(nn.Module):
+    def __init__(self, startp, channels, scales, in_channels=None):
+        super(DLAUp_Dup, self).__init__()
+        self.startp = startp
+        if in_channels is None:
+            in_channels = channels
+        self.channels = channels
+        channels = list(channels)
+        scales = np.array(scales, dtype=int)
+        for i in range(len(channels) - 1):
+            j = -i - 2
+            setattr(self, 'ida_{}'.format(i),
+                    IDAUp_Dup(channels[j], in_channels[j:],
+                          scales[j:] // scales[j]))
+            scales[j + 1:] = scales[j]
+            in_channels[j + 1:] = [channels[j] for _ in channels[j + 1:]]
 
+    def forward(self, layers):
+        out = [layers[-1]] # start with 32
+        for i in range(len(layers) - self.startp - 1):
+            ida = getattr(self, 'ida_{}'.format(i))
+            ida(layers, len(layers) -i - 2, len(layers))
+            out.insert(0, layers[-1])
+        return out
 
 class Interpolate(nn.Module):
     def __init__(self, scale, mode):
@@ -449,7 +498,7 @@ class Interpolate(nn.Module):
 
 class DLASeg(nn.Module):
     def __init__(self, base_name, heads, pretrained, down_ratio, final_kernel,
-                 last_level, head_conv, out_channel=0):
+                 last_level, head_conv, out_channel=0, Dup=False):
         super(DLASeg, self).__init__()
         assert down_ratio in [2, 4, 8, 16]
         self.first_level = int(np.log2(down_ratio))
@@ -459,7 +508,11 @@ class DLASeg(nn.Module):
         self.base = globals()[base_name](pretrained=pretrained)
         channels = self.base.channels
         scales = [2 ** i for i in range(len(channels[self.first_level:]))]
-        self.dla_up = DLAUp(self.first_level, channels[self.first_level:], scales)
+        if Dup:
+            print("使用Dup")
+            self.dla_up = DLAUp_Dup(self.first_level, channels[self.first_level:], scales)
+        else:
+            self.dla_up = DLAUp(self.first_level, channels[self.first_level:], scales)
 
         if out_channel == 0:
             out_channel = channels[self.first_level]
@@ -515,7 +568,7 @@ class DLASeg(nn.Module):
         return [z]
         # alter by lwk
         # return tuple(vis_z)
-    
+
 
 def get_pose_net(num_layers, heads, head_conv=256, down_ratio=4):
   model = DLASeg('dla{}'.format(num_layers), heads,
@@ -523,6 +576,6 @@ def get_pose_net(num_layers, heads, head_conv=256, down_ratio=4):
                  down_ratio=down_ratio,
                  final_kernel=1,
                  last_level=5,
-                 head_conv=head_conv)
+                 head_conv=head_conv,
+                 Dup=True)
   return model
-
