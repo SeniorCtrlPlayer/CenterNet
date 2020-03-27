@@ -10,38 +10,8 @@ from torch.autograd import gradcheck
 
 from dup import dup, Dup
 
-N, inC, inH, inW = 2, 2, 4, 4
+N, inC, inH, inW = 1, 3, 2, 2
 kH, kW = 2, 2
-
-def check_dup_zero_offset():
-    conv_offset = nn.Conv2d(inC, deformable_groups * 2 * kH * kW,
-                            kernel_size=(kH, kW),
-                            stride=(1, 1),
-                            padding=(1, 1),
-                            bias=True).cuda()
-    dcn_v2 = DCNv2(inC, outC, (kH, kW),
-                   stride=1, padding=1, dilation=1,
-                   deformable_groups=deformable_groups).cuda()
-
-    conv_offset.weight.data.zero_()
-    conv_offset.bias.data.zero_()
-    conv_mask.weight.data.zero_()
-    conv_mask.bias.data.zero_()
-    conv_identify(dcn_v2.weight, dcn_v2.bias)
-
-    input = torch.randn(N, inC, inH, inW).cuda()
-    offset = conv_offset(input)
-    mask = conv_mask(input)
-    mask = torch.sigmoid(mask)
-    output = dcn_v2(input, offset, mask)
-    output *= 2
-    d = (input - output).abs().max()
-    if d < 1e-10:
-        print('Zero offset passed')
-    else:
-        print('Zero offset failed')
-        print(input)
-        print(output)
         
 def check_zero_offset():
     offset = torch.ones(N, 2 * kH * kW, inH, inW).cuda() * 0.5
@@ -63,7 +33,7 @@ def check_gradient_dconv():
 
     print('check_gradient_dconv: ',
           gradcheck(dup, (input, offset, (kW,kH)),
-                    eps=1e-1, atol=1e-4, rtol=1e-2))
+                    eps=1e-3, atol=1e-4, rtol=1e-2))
 def example_dconv():
     input = torch.ones(N, inC, inH, inW).cuda()
     input[0][0][0][0] = 2
@@ -89,7 +59,7 @@ def example_dconv():
 def example_dup():
     # wrap all things (offset and mask) in DCN
     input = torch.randn((N, inC, inH, inW)).cuda()
-    dcn = Dup(input.size(1), input.size(2), input.size(3)).cuda()
+    dcn = Dup(input.size(1), kH, kW).cuda()
     # print(dcn.weight.shape, input.shape)
     output = dcn(input)
     targert = output.new(*output.size())
@@ -111,7 +81,7 @@ if __name__ == '__main__':
     #     check_zero_offset()
     #check_zero_offset()
     # check_gradient_dpooling()
-    #check_gradient_dconv()
+    check_gradient_dconv()
     #check_gradient_dconv1()
     # """
     # ****** Note: backward is not reentrant error may not be a serious problem,

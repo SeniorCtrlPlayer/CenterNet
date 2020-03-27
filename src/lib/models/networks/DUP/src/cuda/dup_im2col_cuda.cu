@@ -288,49 +288,42 @@ __global__ void modulated_deformable_col2im_gpu_kernel(const int n,
 __global__ void modulated_deformable_col2im_coord_gpu_kernel(const int n,
                                                              const float *grad_out, const float *data_im,
                                                              const float *data_offset,
-                                                             const int channels, const int height, const int width,
-                                                             const int kernel_h, const int kernel_w,
-                                                             const int offset_channels,
+                                                             const int out_channels, const int height, const int width,
+                                                             const int hw_out, const int kernel_h, const int kernel_w,
+                                                             const int xy_offset_channels,
                                                              float *grad_offset)
 {
   CUDA_KERNEL_LOOP(index, n)
   {
     float val = 0;
-    int offset_h_ptr = index % (width * height * kernel_w * kernel_h);
-    int offset_w_ptr = offset_h_ptr + width * height * kernel_w * kernel_h;
-    int h_or_w = index / (width * height * kernel_w * kernel_h);
+    int offset_h_ptr = index % hw_out;
+    int offset_w_ptr = offset_h_ptr + hw_out;
+    int h_or_w = index / hw_out;
     int w = index % width;
     int h = (index / width) % height;
-    int c = (index / width / height) % offset_channels;
+    int c = (index / width / height) % xy_offset_channels;
     
     float inv_h = h + data_offset[offset_h_ptr];
     float inv_w = w + data_offset[offset_w_ptr];
     // get grad_out_ptr
-    int w_out = kernel_w * w + c % 4 / 2;
-    int h_out = kernel_h * h + c % 2;
+    int w_out = kernel_w * w + c % 2;
+    int h_out = kernel_h * h + c / 2;
     int grad_out_ptr = h_out * (width * kernel_w) + w_out;
     
-    const float * data_im_ptr = data_im;
     float weight = 0;
     
     if (inv_h <= -1 || inv_w <= -1 || inv_h >= height || inv_w >= width)
     {
       inv_h = inv_w = -2;
     }
-    /*
-    int debug = 0;
-    if (index == 0 || index == width * height * kernel_w * kernel_h)
-        debug = 1;
-    */
-    for (int data_c=0; data_c < channels; data_c++)
+    for (int data_c=0; data_c < out_channels; data_c++)
     {
-        data_im_ptr += data_c * width * height;
-        grad_out_ptr += data_c * (width * kernel_w) * (height * kernel_h);
         weight = dmcn_get_coordinate_weight(inv_h, inv_w,
                                             height, width,
-                                            data_im_ptr, width, h_or_w/*, debug*/);
+                                            data_im + data_c * hw_out,
+                                            width, h_or_w);
 
-        val += weight * grad_out[grad_out_ptr];
+        val += weight * grad_out[grad_out_ptr + data_c * hw_out];
     }
     grad_offset[index] = val;
   }
@@ -384,14 +377,15 @@ void modulated_deformable_col2im_cuda(cudaStream_t stream,
 void modulated_deformable_col2im_coord_cuda(cudaStream_t stream,
   const float* data_col, const float* data_im, const float* data_offset,
   const int channels, const int height_im, const int width_im,
-  const int kernel_h, const int kernel_w, float* grad_offset) {
+  const int height_out, const int width_out, const int kernel_h, const int kernel_w,
+  float* grad_offset) {
   //const int num_kernels = batch_size * height_col * width_col * 2 * kernel_h * kernel_w;
-  const int num_kernels = 2 * kernel_h * kernel_w * height_im * width_im;
+  const int num_kernels = 2 * height_out * width_out;
   modulated_deformable_col2im_coord_gpu_kernel
       <<<GET_BLOCKS(num_kernels), CUDA_NUM_THREADS,
         0, stream>>>(
         num_kernels, data_col, data_im, data_offset, channels, height_im, width_im,
-        kernel_h, kernel_w, 2 * kernel_h * kernel_w, grad_offset);
+        num_kernels / 2, kernel_h, kernel_w, 2 * kernel_h * kernel_w, grad_offset);
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
   {

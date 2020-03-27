@@ -84,21 +84,21 @@ std::vector<at::Tensor> dup_cuda_backward(const at::Tensor &input,
     {
         auto input_n = input.select(0, b);
         auto offset_n = offset.select(0, b);
-        auto columns_n = grad_output.select(0, b);
+        auto grad_output_n = grad_output.select(0, b);
         //columns_n = columns_n.sum(0);
         auto grad_input_n = grad_input.select(0, b);
         auto grad_offset_n = grad_offset.select(0, b);
         
         modulated_deformable_col2im_coord_cuda(THCState_getCurrentStream(state),
-                                               columns_n.data<scalar_t>(),
+                                               grad_output_n.data<scalar_t>(),
                                                input_n.data<scalar_t>(),
                                                offset_n.data<scalar_t>(),
                                                channels, height, width,
-                                               kernel_h, kernel_w,
+                                               height_out, width_out, kernel_h, kernel_w,
                                                grad_offset_n.data<scalar_t>());
         // gradient w.r.t. input data
         modulated_deformable_col2im_cuda(THCState_getCurrentStream(state),
-                                         columns_n.data<scalar_t>(),
+                                         grad_output_n.data<scalar_t>(),
                                          offset_n.data<scalar_t>(),
                                          channels, height, width,
                                          height_out, width_out, kernel_h, kernel_w,

@@ -84,7 +84,7 @@ extern "C"
   void modulated_deformable_col2im_coord_cuda(cudaStream_t stream,
                                          const float *data_col, const float *data_im, const float *data_offset,
                                          const int channels, const int height_im, const int width_im,
-                                         const int kernel_h, const int kenerl_w,
+                                         const int height_out, const int width_out, const int kernel_h, const int kenerl_w,
                                          float *grad_offset);
 
 #ifdef __cplusplus
