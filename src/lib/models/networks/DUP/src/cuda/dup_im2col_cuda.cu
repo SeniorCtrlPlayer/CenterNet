@@ -111,6 +111,8 @@ __device__ float dmcn_get_coordinate_weight(float argmax_h, float argmax_w,
   {
     if (argmax_h_low >= 0 && argmax_w_low >= 0 && argmax_h_high <= height - 1 && argmax_w_high <= width - 1)
     {
+      //if(argmax_h_high * data_width + argmax_w_high > width * height)
+      //  printf("[argmax_h_high, argmax_w_high], [%d, %d]", argmax_h_high, argmax_w_high)
       weight += -1 * (argmax_w_high - argmax_w) * im_data[argmax_h_low * data_width + argmax_w_low];
       weight += -1 * (argmax_w - argmax_w_low) * im_data[argmax_h_low * data_width + argmax_w_high];
       weight += (argmax_w_high - argmax_w) * im_data[argmax_h_high * data_width + argmax_w_low];
@@ -121,6 +123,8 @@ __device__ float dmcn_get_coordinate_weight(float argmax_h, float argmax_w,
   {
     if (argmax_h_low >= 0 && argmax_w_low >= 0 && argmax_h_high <= height - 1 && argmax_w_high <= width - 1)
     {
+      //if(argmax_h_high * data_width + argmax_w_high > width * height)
+      //  printf("[argmax_h_high, argmax_w_high], [%d, %d]", argmax_h_high, argmax_w_high)
       weight += -1 * (argmax_h_high - argmax_h) * im_data[argmax_h_low * data_width + argmax_w_low];
       weight += (argmax_h_high - argmax_h) * im_data[argmax_h_low * data_width + argmax_w_high];
       weight += -1 * (argmax_h - argmax_h_low) * im_data[argmax_h_high * data_width + argmax_w_low];
@@ -318,9 +322,11 @@ __global__ void modulated_deformable_col2im_coord_gpu_kernel(const int n,
     }
     for (int data_c=0; data_c < out_channels; data_c++)
     {
+        //if (grad_out_ptr + data_c * hw_out >= out_channels * hw_out)
+        //    printf("[index, grad_out, out_channels, hw_out] [%d, %d, %d, %d]\n", index, grad_out_ptr + data_c * hw_out, out_channels, hw_out);
         weight = dmcn_get_coordinate_weight(inv_h, inv_w,
                                             height, width,
-                                            data_im + data_c * hw_out,
+                                            data_im + data_c * height * width,
                                             width, h_or_w);
 
         val += weight * grad_out[grad_out_ptr + data_c * hw_out];
@@ -381,11 +387,13 @@ void modulated_deformable_col2im_coord_cuda(cudaStream_t stream,
   float* grad_offset) {
   //const int num_kernels = batch_size * height_col * width_col * 2 * kernel_h * kernel_w;
   const int num_kernels = 2 * height_out * width_out;
+  //printf("[channels, height_im, width_im, kernel_h, kernel_w, height_out, width_out] [%d, %d, %d, %d, %d, %d, %d]\n",
+  // channels, height_im, width_im, kernel_h, kernel_w, height_out, width_out);
   modulated_deformable_col2im_coord_gpu_kernel
       <<<GET_BLOCKS(num_kernels), CUDA_NUM_THREADS,
         0, stream>>>(
         num_kernels, data_col, data_im, data_offset, channels, height_im, width_im,
-        num_kernels / 2, kernel_h, kernel_w, 2 * kernel_h * kernel_w, grad_offset);
+        num_kernels / 2, kernel_h, kernel_w, kernel_h * kernel_w, grad_offset);
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
   {

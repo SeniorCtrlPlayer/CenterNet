@@ -10,7 +10,7 @@ from torch.autograd import gradcheck
 
 from dup import dup, Dup
 
-N, inC, inH, inW = 1, 3, 2, 2
+N, inC, inH, inW = 1, 128, 256, 256
 kH, kW = 2, 2
         
 def check_zero_offset():
@@ -59,6 +59,7 @@ def example_dconv():
 def example_dup():
     # wrap all things (offset and mask) in DCN
     input = torch.randn((N, inC, inH, inW)).cuda()
+    input.requires_grad = True
     dcn = Dup(input.size(1), kH, kW).cuda()
     # print(dcn.weight.shape, input.shape)
     output = dcn(input)
@@ -67,6 +68,7 @@ def example_dup():
     error = (targert - output).mean()
     error.backward()
     print(output.shape)
+    print(input.grad.shape)
     
 if __name__ == '__main__':
 
@@ -81,7 +83,7 @@ if __name__ == '__main__':
     #     check_zero_offset()
     #check_zero_offset()
     # check_gradient_dpooling()
-    check_gradient_dconv()
+    #check_gradient_dconv()
     #check_gradient_dconv1()
     # """
     # ****** Note: backward is not reentrant error may not be a serious problem,
