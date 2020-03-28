@@ -484,6 +484,29 @@ class DLAUp_Dup(nn.Module):
             ida(layers, len(layers) -i - 2, len(layers))
             out.insert(0, layers[-1])
         return out
+# add by lwk
+class Dup_FPN(nn.Module):
+    def __init__(self, startp, channels, scales, in_channels=None):
+        super(Dup_FPN, self).__init__()
+        self.startp = startp
+        if in_channels is None:
+            in_channels = channels
+        self.channels = channels
+        channels = list(channels)
+        scales = np.array(scales, dtype=int)
+        for i in range(1, len(self.channels)):
+            setattr(self, 'DupFPN_conv{}'.format(i), conv3x3(self.channels[i], self.channels[0]))
+            setattr(self, 'DupFPN_dup{}'.format(i), Dup(self.channels[0], kh=scales[i], kw=scales[i]))
+        self.last_conv = conv3x3(self.channels[0], self.channels[0])
+
+    def forward(self, layers):
+        x = layers[self.startp]
+        for i in range(1, len(layers) - self.startp):
+            conv = getattr(self, 'DupFPN_conv{}'.format(i))
+            dup = getattr(self, 'DupFPN_dup{}'.format(i))
+            x += dup(conv(layers[self.startp + i]))
+        x = self.last_conv(x)
+        return [x]
 
 class Interpolate(nn.Module):
     def __init__(self, scale, mode):
@@ -498,7 +521,7 @@ class Interpolate(nn.Module):
 
 class DLASeg(nn.Module):
     def __init__(self, base_name, heads, pretrained, down_ratio, final_kernel,
-                 last_level, head_conv, out_channel=0, Dup=False):
+                 last_level, head_conv, out_channel=0, Dup=False, newFPN=False):
         super(DLASeg, self).__init__()
         assert down_ratio in [2, 4, 8, 16]
         self.first_level = int(np.log2(down_ratio))
@@ -508,7 +531,11 @@ class DLASeg(nn.Module):
         self.base = globals()[base_name](pretrained=pretrained)
         channels = self.base.channels
         scales = [2 ** i for i in range(len(channels[self.first_level:]))]
-        if Dup:
+        if newFPN:
+            print("使用新FPN结构")
+            self.dla_up = Dup_FPN(self.first_level, channels[self.first_level:], scales)
+            pass
+        elif Dup:
             print("使用Dup")
             self.dla_up = DLAUp_Dup(self.first_level, channels[self.first_level:], scales)
         else:
@@ -577,5 +604,6 @@ def get_pose_net(num_layers, heads, head_conv=256, down_ratio=4):
                  final_kernel=1,
                  last_level=5,
                  head_conv=head_conv,
-                 Dup=True)
+                 Dup=False,
+                 newFPN=True)
   return model

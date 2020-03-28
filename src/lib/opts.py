@@ -189,7 +189,7 @@ class opts(object):
     print('training chunk_sizes:', opt.chunk_sizes)
 
     opt.root_dir = os.path.join(os.path.dirname(__file__), '..', '..')
-    #opt.data_dir = os.path.join(opt.root_dir, 'data')
+    opt.data_dir = os.path.join(opt.root_dir, 'data')
     if not opt.colab:
         opt.data_dir = os.path.join(opt.root_dir, 'data')
         opt.exp_dir = os.path.join(opt.root_dir, 'exp', 'multi_pose')
