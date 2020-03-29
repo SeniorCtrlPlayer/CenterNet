@@ -504,7 +504,7 @@ class Dup_FPN(nn.Module):
         for i in range(1, len(layers) - self.startp):
             conv = getattr(self, 'DupFPN_conv{}'.format(i))
             dup = getattr(self, 'DupFPN_dup{}'.format(i))
-            x += dup(conv(layers[self.startp + i]))
+            x = x + dup(conv(layers[self.startp + i]))
         x = self.last_conv(x)
         return [x]
 

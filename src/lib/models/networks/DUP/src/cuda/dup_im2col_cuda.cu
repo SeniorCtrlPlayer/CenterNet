@@ -156,7 +156,7 @@ __global__ void modulated_deformable_im2col_gpu_kernel(const int n,
 
     float *data_col_ptr = data_col + (channel * height_col + h_col) * width_col + w_col;
     const float *data_im_ptr = data_im + channel * height * width;
-    const int kernel_index_h = h_col % kernel_h * 2 + w_col % 2;
+    const int kernel_index_h = h_col % kernel_h * kernel_w + w_col % kernel_w;
     const int kernel_index_w = kernel_index_h + kernel_h * kernel_w;
     
     const int data_offset_h_ptr = (kernel_index_h * height + h_in) * width + w_in;
@@ -222,7 +222,7 @@ __global__ void modulated_deformable_col2im_gpu_kernel(const int n,
     //float *data_col_ptr = data_col + (channel * height_col + h_col) * width_col + w_col;
     const int data_col_index = (channel * height_col + h_col) * width_col + w_col;
     float *data_im_ptr = grad_im + channel * height * width;
-    const int kernel_index_h = h_col % kernel_h * 2 + w_col % 2;
+    const int kernel_index_h = h_col % kernel_h * kernel_w + w_col % kernel_w;
     const int kernel_index_w = kernel_index_h + kernel_h * kernel_w;
     
     const int data_offset_h_ptr = (kernel_index_h * height + h_in) * width + w_in;
