@@ -382,14 +382,17 @@ class DeformConv(nn.Module):
 
 class IDAUp(nn.Module):
 
-    def __init__(self, o, channels, up_f):
+    def __init__(self, o, channels, up_f, DCN=False):
         super(IDAUp, self).__init__()
         for i in range(1, len(channels)):
             c = channels[i]
-            f = int(up_f[i])  
-            proj = DeformConv(c, o)
-            node = DeformConv(o, o)
-            # node = conv3x3(o, o)
+            f = int(up_f[i])
+            if DCN and i == 1:
+                proj = DeformConv(c, o)
+            else:
+                proj = conv3x3(o, o)
+            # node = DeformConv(o, o)
+            node = conv3x3(o, o)
             up = nn.ConvTranspose2d(o, o, f * 2, stride=f, 
                                     padding=f // 2, output_padding=0,
                                     groups=o, bias=False)
@@ -448,7 +451,7 @@ class DLAUp(nn.Module):
             j = -i - 2
             setattr(self, 'ida_{}'.format(i),
                     IDAUp(channels[j], in_channels[j:],
-                          scales[j:] // scales[j]))
+                          scales[j:] // scales[j], DCN=True))
             scales[j + 1:] = scales[j]
             in_channels[j + 1:] = [channels[j] for _ in channels[j + 1:]]
 
@@ -605,5 +608,5 @@ def get_pose_net(num_layers, heads, head_conv=256, down_ratio=4):
                  last_level=5,
                  head_conv=head_conv,
                  Dup=False,
-                 newFPN=True)
+                 newFPN=False)
   return model
