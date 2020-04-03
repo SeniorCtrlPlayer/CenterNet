@@ -390,7 +390,7 @@ class IDAUp(nn.Module):
             if DCN and i == 1:
                 proj = DeformConv(c, o)
             else:
-                proj = conv3x3(o, o)
+                proj = conv3x3(c, o)
             # node = DeformConv(o, o)
             node = conv3x3(o, o)
             up = nn.ConvTranspose2d(o, o, f * 2, stride=f, 
